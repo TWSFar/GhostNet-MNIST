@@ -1,0 +1,10 @@
+# compile file of python
+*.py[cod]
+_pycache_
+*$py.class
+*.pyc
+
+# My configurations:
+data/
+work_dir/
+.vscode/
