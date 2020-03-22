@@ -1,15 +1,16 @@
 class Config:
     # Train
-    epochs = 100
+    epochs = 20
     freeze_bn = False
 
     # Dataset
     data_dir = 'data'
-    batch_size = '128'
-    workers = 12
+    batch_size = 64
+    input_size = (224, 224)
+    workers = 2
 
     # Optimizer and Scheduler
-    lr = 0.0005
+    lr = 0.005
     momentum = 0.9
     decay = 5e-4
     steps = [0.8, 0.9]
@@ -20,6 +21,10 @@ class Config:
 
     # Tools
     work_dir = 'work_dir'
+
+    def _state_dict(self):
+        return {k: getattr(self, k) for k, _ in Config.__dict__.items()
+                if not k.startswith('_')}
 
 
 opt = Config()

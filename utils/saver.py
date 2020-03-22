@@ -1,5 +1,4 @@
 import os
-import time
 import shutil
 import os.path as osp
 
@@ -14,19 +13,15 @@ class Saver(object):
         self.logfile = osp.join(self.directory, 'train.log')
         if not osp.exists(self.directory):
             os.makedirs(self.directory)
-
-    def log_info(self):
         logging.basicConfig(
                     format='[%(asctime)s %(levelname)s] - %(message)s',
                     datefmt='%Y/%m/%d %H:%M:%S',
                     level=logging.DEBUG)
         f_handler = logging.FileHandler(self.logfile, mode='w')
-        logger = logging.getLogger(__name__)
-        logger.addHandler(f_handler)
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(f_handler)
         for key, val in self.opt._state_dict().items():
-            logger.info(key + ': ' + str(val))
-
-        return logger
+            self.logger.info(key + ': ' + str(val))
 
     def save_checkpoint(self, state, is_best, filename='last.pth'):
         ''' Saver checkpoint to disk '''

@@ -1,6 +1,7 @@
 import time
-import logging
+import collections
 import numpy as np
+from tqdm import tqdm
 from config import opt
 from datasets.mnist import Mnist
 from models.model import Model
@@ -8,9 +9,12 @@ from models.loss import CrossEntropyLoss
 from utils import Timer, AverageMeter, Saver
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader 
+import multiprocessing
+multiprocessing.set_start_method('spawn', True)
+torch.manual_seed(1)
+torch.cuda.manual_seed(1)
 
 
 class Trainer(object):
@@ -18,15 +22,17 @@ class Trainer(object):
         # Configs
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.saver = Saver(opt)
-        self.logger = self.saver.log_info()
+        self.logger = self.saver.logger
         self.best_pred = 0.0
 
         # Define model
-        self.model = Model().to(self.device)
+        self.model = Model(freeze_bn=opt.freeze_bn).to(self.device)
 
         # Datasets dataloader
-        self.train_dataset = Mnist(data_dir=opt.data_dir, Train=True)
-        self.val_dataset = Mnist(data_dir=opt.data_dir, Train=False)
+        self.train_dataset = Mnist(data_dir=opt.data_dir,
+                                   input_size=opt.input_size,
+                                   train=True)
+        self.val_dataset = Mnist(data_dir=opt.data_dir, train=False)
         self.train_loader = DataLoader(self.train_dataset,
                                        batch_size=opt.batch_size,
                                        num_workers=opt.workers,
@@ -62,12 +68,13 @@ class Trainer(object):
     def train(self, epoch):
         self.model.train()
         last_time = time.time()
-        for iter_num, imgs, labels in enumerate(tqdm(self.train_dataset)):
-            imgs.to(self.device)
-            labels.to(self.device)
+        for iter_num, sample in enumerate(self.train_loader):
+            # if iter_num > 2: break;
+            imgs = sample[0].to(self.device)
+            labels = sample[1].to(self.device)
 
             # Forward
-            outputs = model(imgs)
+            outputs = self.model(imgs)
 
             # Backward
             loss = self.loss(outputs, labels)
@@ -101,9 +108,10 @@ class Trainer(object):
         correct_meter = AverageMeter()
         self.model.eval()
         with torch.no_grad():
-            for imgs, labels in tqdm(self.val_dataset):
-                imgs.to(self.device)
-                labels.to(self.device)
+            for iter_num, sample in enumerate(tqdm(self.val_loader)):
+                # if iter_num > 10: break;
+                imgs = sample[0].to(self.device)
+                labels = sample[1].to(self.device)
 
                 outputs = self.model(imgs)
 
@@ -115,7 +123,10 @@ class Trainer(object):
                 correct_meter.update(correct, 1)
 
         accuracy = correct_meter.sum / len(self.val_dataset)
-        self.logger.info('Epoch: {}, accuracy: {}, average loss: {}, previous best'.format(
+        self.logger.info('VAL: epoch: {}, '
+                         'accuracy: {:1.5f}, '
+                         'average loss: {:1.4f}, '
+                         'previous best: {:1.4f}'.format(
                             epoch, accuracy, loss, self.best_pred))
 
         return accuracy
@@ -124,13 +135,13 @@ class Trainer(object):
 def main():
     trainer = Trainer()
     start_time = time.time()
-    for epoch in opt.epochs:
+    for epoch in range(opt.epochs):
         # Train
-        trainer.train()
+        trainer.train(epoch)
 
         # Val
         val_time = time.time()
-        accuracy = trainer.val()
+        accuracy = trainer.val(epoch)
         trainer.timer.set_val_eta(epoch, val_time-time.time())
 
         is_best = accuracy > trainer.best_pred
@@ -138,14 +149,14 @@ def main():
         if (epoch % 20 == 0 and epoch != 0) or is_best:
             trainer.saver.save_checkpoint({
                 'epoch': epoch,
-                'state_dict': trainer.model.module.state_dict() if len(opt.gpu_id) > 1
-                else trainer.model.state_dict(),
+                'state_dict': trainer.model.state_dict(),
                 'best_pred': trainer.best_pred,
                 'optimizer': trainer.optimizer.state_dict(),
             }, is_best)
 
     all_time = trainer.timer.second2hour(time.time() - start_time)
-    print("Train done!, Sum time: {}, Best result: {}".format(all_time, trainer.best_pred))
+    trainer.logger("Train done!, Sum time: {}, Best result: {}".format(all_time, trainer.best_pred))
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     main()

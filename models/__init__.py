@@ -1,8 +1,8 @@
-from .aspp import ASPP
+from .selayer import SELayer
 from .fpn import FPN
 from .loss import CrossEntropyLoss
 from .ghostnet import GhostNet
 
 __all__ = [
-    'ASPP', 'FPN', 'CrossEntropyLoss', 'GhostNet'
+    'SELayer', 'FPN', 'CrossEntropyLoss', 'GhostNet'
 ]

@@ -1,4 +1,3 @@
-import cv2
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,7 +29,7 @@ class RandomSaltPepperBlur(object):
 def Mnist(data_dir="data", input_size=(224, 224), train=True):
     if train:
         tsf = transforms.Compose([
-            transforms.RandomRotation(30, fill=None),
+            transforms.RandomRotation(30),
             transforms.Resize(input_size),
             RandomGaussianBlur(),
             RandomSaltPepperBlur(),
@@ -43,15 +42,16 @@ def Mnist(data_dir="data", input_size=(224, 224), train=True):
         ])
     dataset = datasets.MNIST(data_dir,
                              train=train,
-                             transform=tsf, 
+                             transform=tsf,
                              download=True)
 
     return dataset
 
 
-if __name__=='__main__':
-    dataset = Mnist(train=False)
-    for sample in dataset:
-        img = sample[0].numpy().reshape((224, 224))
+if __name__ == '__main__':
+    dataset = Mnist()
+    from torch.utils.data import DataLoader
+    mm = DataLoader(dataset)
+    for i, sample in enumerate(mm):
         plt.imshow(sample[0].numpy().reshape((224, 224)))
         plt.show()
