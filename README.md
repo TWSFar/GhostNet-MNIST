@@ -7,13 +7,13 @@ pip install -r requirements.py
 ```
 
 ## Train
-```python
+```shell
 1. Configure training parameters in 'config.py'
 2. python train.py  # Training
 ```
 
 ## Test
-```python
+```shell
 python test.py --image ${IMAGE PATH OR DIRECTORY} --checkpoint ${CHECKPOINT_FILE}
 ```
 Optional arguments:
@@ -22,11 +22,11 @@ Optional arguments:
 Examples:
 
 1. Test one image 
-```python
+```shell
 python test.py --image 'demo/1.jpg' --checkpoint 'work_dir/model_best.pth' --show
 ```
 
 2. Test multiple images
-```python
+```shell
 python test.py --image 'demo' --checkpoint 'work_dir/model_best.pth' --show
 ``` 
