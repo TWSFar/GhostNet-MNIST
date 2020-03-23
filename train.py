@@ -155,7 +155,7 @@ def main():
             }, is_best)
 
     all_time = trainer.timer.second2hour(time.time() - start_time)
-    trainer.logger("Train done!, Sum time: {}, Best result: {}".format(all_time, trainer.best_pred))
+    trainer.logger.info("Train done!, Sum time: {}, Best result: {}".format(all_time, trainer.best_pred))
 
 
 if __name__ == '__main__':
