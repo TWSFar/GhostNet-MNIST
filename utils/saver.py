@@ -4,6 +4,7 @@ import os.path as osp
 
 import logging
 import torch
+from tensorboardX import SummaryWriter
 
 
 class Saver(object):
@@ -22,6 +23,7 @@ class Saver(object):
         self.logger.addHandler(f_handler)
         for key, val in self.opt._state_dict().items():
             self.logger.info(key + ': ' + str(val))
+        self.writer = SummaryWriter(log_dir=self.directory)
 
     def save_checkpoint(self, state, is_best, filename='last.pth'):
         ''' Saver checkpoint to disk '''

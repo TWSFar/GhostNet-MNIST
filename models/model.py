@@ -22,7 +22,8 @@ class Model(nn.Module):
             nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
             nn.Dropout(0.2),
-            nn.Linear(256, 10))
+            nn.Linear(256, 10),
+            nn.Sigmoid())
 
         if checkpoint is not None:
             checkpoint = torch.load(checkpoint)

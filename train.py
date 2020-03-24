@@ -10,7 +10,7 @@ from utils import Timer, AverageMeter, Saver
 
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader 
+from torch.utils.data import DataLoader
 import multiprocessing
 multiprocessing.set_start_method('spawn', True)
 torch.manual_seed(1)
@@ -23,6 +23,7 @@ class Trainer(object):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.saver = Saver(opt)
         self.logger = self.saver.logger
+        self.writer = self.saver.writer
         self.best_pred = 0.0
 
         # Define model
@@ -89,9 +90,10 @@ class Trainer(object):
             last_time = time.time()
             self.step_time.append(batch_time)
             eta = self.timer.eta(global_step, batch_time)
+            self.writer.add_scalar('train/loss', loss.item(), global_step)
             if global_step % opt.print_freq == 0:
                 printline = ('Epoch: [{}][{}/{}] '
-                             'lr: 1x:{:1.5f}, '
+                             'lr: {:1.5f}, '
                              'eta: {}, time: {:1.1f}, '
                              'Loss: {:1.4f} '.format(
                                 epoch, iter_num+1, self.nbatch_train,
@@ -106,6 +108,8 @@ class Trainer(object):
         # Validate
         loss_meter = AverageMeter()
         correct_meter = AverageMeter()
+        gts = np.zeros(10)
+        preds = np.zeros(10)
         self.model.eval()
         with torch.no_grad():
             for iter_num, sample in enumerate(tqdm(self.val_loader)):
@@ -118,16 +122,30 @@ class Trainer(object):
                 loss = self.loss(outputs, labels)
                 loss_meter.update(loss.item(), len(imgs))
 
-                preds = torch.argmax(outputs, dim=1)
-                correct = preds.eq(labels).sum().item()
+                outputs = torch.argmax(outputs, dim=1)
+                correct = outputs.eq(labels).sum().item()
                 correct_meter.update(correct, 1)
+
+                for pred, gt in zip(outputs, labels):
+                    gts[gt.item()] += 1.0
+                    if pred.item() == gt.item():
+                        preds[pred.item()] += 1.0
 
         accuracy = correct_meter.sum / len(self.val_dataset)
         self.logger.info('VAL: epoch: {}, '
                          'accuracy: {:1.5f}, '
                          'average loss: {:1.4f}, '
                          'previous best: {:1.4f}'.format(
-                            epoch, accuracy, loss, self.best_pred))
+                            epoch, accuracy, loss_meter.avg, self.best_pred))
+        self.writer.add_scalar('val/loss', loss_meter.avg, epoch)
+        self.writer.add_scalar('val/accuracy', accuracy, epoch)
+
+        # Per class
+        self.logger.info('%-10s%-10s' % ('number', 'accuracy'))
+        for num in range(10):
+            acc_per = preds[num] / gts[num]
+            self.logger.info('%-10d%-10.4f' % (num, acc_per))
+            self.writer.add_scalar('val/number_{}'.format(num), acc_per, epoch)
 
         return accuracy
 

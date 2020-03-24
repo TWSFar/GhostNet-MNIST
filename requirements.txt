@@ -1,4 +1,6 @@
 matplotlib
 opencv-python
+pillow
 tqdm
 torch
+tensorboardX

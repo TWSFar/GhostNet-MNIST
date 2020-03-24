@@ -8,3 +8,4 @@ _pycache_
 data/
 work_dir/
 .vscode/
+examples/

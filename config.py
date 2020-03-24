@@ -5,12 +5,12 @@ class Config:
 
     # Dataset
     data_dir = 'data'
-    batch_size = 64
+    batch_size = 192
     input_size = (224, 224)
     workers = 2
 
     # Optimizer and Scheduler
-    lr = 0.005
+    lr = 0.05
     momentum = 0.9
     decay = 5e-4
     steps = [0.8, 0.9]

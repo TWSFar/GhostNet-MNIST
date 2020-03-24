@@ -53,5 +53,6 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
     mm = DataLoader(dataset)
     for i, sample in enumerate(mm):
+        max = sample[0].max()
         plt.imshow(sample[0].numpy().reshape((224, 224)))
         plt.show()
