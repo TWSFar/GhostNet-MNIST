@@ -1,4 +1,5 @@
 import os
+import cv2
 import torch
 import argparse
 import os.path as osp
@@ -11,9 +12,9 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test")
-    parser.add_argument('--image', type=str, default='/home/twsf/work/GhostNet-MNIST/examples/r2.png',
+    parser.add_argument('--image', type=str, default='/home/twsf/work/GhostNet-MNIST/demo',
                         help='image path or directory(type in [jpg, png, JPEG])')
-    parser.add_argument('--checkpoint', type=str, default='/home/twsf/work/GhostNet-MNIST/work_dir/model_best.pth')
+    parser.add_argument('--checkpoint', type=str, default='/home/twsf/work/GhostNet-MNIST/work_dir/last.pth')
     parser.add_argument('--show', action='store_true')
     args = parser.parse_args()
     return args
@@ -44,11 +45,14 @@ def test():
     model.eval()
     with torch.no_grad():
         for image in images:
-            img = Image.open(image).convert('L')
+            # img = Image.open(image).convert('L')
+            img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+            img = Image.fromarray(img)
             input = tsf(img).unsqueeze(0)
             output = model(input.to(DEVICE))
             predict = torch.argmax(output)
-            print(predict.item())
+            print('image: {}'.format(image))
+            print('result: {}'.format(predict.item()))
 
             # Show image and result
             if args.show:

@@ -49,10 +49,13 @@ def Mnist(data_dir="data", input_size=(224, 224), train=True):
 
 
 if __name__ == '__main__':
-    dataset = Mnist()
+    import cv2
     from torch.utils.data import DataLoader
+    dataset = Mnist(train=False)
     mm = DataLoader(dataset)
     for i, sample in enumerate(mm):
-        max = sample[0].max()
-        plt.imshow(sample[0].numpy().reshape((224, 224)))
+        if i > 5: break;
+        img = sample[0].numpy().reshape((224, 224))
+        plt.imshow(img)
+        cv2.imwrite('demo/img_{}.png'.format(i), img*255)
         plt.show()
